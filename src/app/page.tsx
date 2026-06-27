@@ -3,6 +3,8 @@ import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { Stakes } from "@/components/Stakes";
 import { PromiseSection } from "@/components/Promise";
+import { Methods } from "@/components/Methods";
+import { Pricing } from "@/components/Pricing";
 
 export default function Home() {
   return (
@@ -12,7 +14,9 @@ export default function Home() {
         <Hero />
         <Stakes />
         <PromiseSection />
-        {/* sections added in Tasks 5-7 */}
+        <Methods />
+        <Pricing />
+        {/* sections added in Tasks 6-7 */}
       </main>
       <Footer />
     </>
