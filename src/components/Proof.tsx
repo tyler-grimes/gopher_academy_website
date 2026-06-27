@@ -14,7 +14,7 @@ export function Proof() {
         {content.testimonials.map((t, i) => (
           <Reveal key={t.name} delay={i * 0.08}>
             <figure className="flex h-full flex-col justify-between bg-bg p-7">
-              <blockquote className="leading-relaxed text-ink">{t.quote}</blockquote>
+              <blockquote className="line-clamp-3 leading-relaxed text-ink">{t.quote}</blockquote>
               <figcaption className="mt-6 text-sm text-muted">
                 {t.name}, {t.role}
                 <br />

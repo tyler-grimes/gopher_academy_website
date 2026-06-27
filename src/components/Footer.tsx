@@ -16,6 +16,7 @@ export function Footer() {
           <div className="flex gap-5">
             {content.social.map((s) => {
               const Icon = icons[s.label as keyof typeof icons];
+              if (!Icon) return null;
               return (
                 <a key={s.label} href={s.href} aria-label={s.label} className="text-muted transition-colors hover:text-ink">
                   <Icon size={22} />

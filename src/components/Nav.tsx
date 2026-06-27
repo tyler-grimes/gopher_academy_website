@@ -25,7 +25,7 @@ export function Nav() {
             {content.cta.label}
           </a>
         </div>
-        <button className="md:hidden" aria-label="Menu" onClick={() => setOpen(!open)}>
+        <button type="button" className="md:hidden" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(!open)}>
           {open ? <X size={24} /> : <List size={24} />}
         </button>
       </nav>

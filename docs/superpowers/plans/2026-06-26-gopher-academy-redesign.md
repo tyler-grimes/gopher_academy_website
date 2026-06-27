@@ -579,7 +579,7 @@ import { Reveal } from "./Reveal";
 
 const items = ["Licensed and insured", "Discreet, scheduled crews", "Season guarantee"];
 
-export function Promise() {
+export function PromiseSection() {
   return (
     <Section id="promise" className="border-t border-hairline">
       <Reveal>
@@ -607,7 +607,7 @@ export function Promise() {
 }
 ```
 
-- [ ] **Step 3: Insert both into `page.tsx`** after `<Hero />`, in order `<Stakes /> <Promise />`.
+- [ ] **Step 3: Insert both into `page.tsx`** after `<Hero />`, in order `<Stakes /> <PromiseSection />` (component exported as `PromiseSection` to avoid shadowing the global `Promise`).
 
 - [ ] **Step 4: Verify**
 
@@ -935,15 +935,19 @@ export function Consult() {
     setStatus("submitting");
     setErrors({});
     const data = Object.fromEntries(new FormData(e.currentTarget).entries());
-    const res = await fetch("/api/consult", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) setStatus("success");
-    else {
-      const j = await res.json().catch(() => ({ errors: {} }));
-      setErrors(j.errors ?? {});
+    try {
+      const res = await fetch("/api/consult", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) setStatus("success");
+      else {
+        const j = await res.json().catch(() => ({ errors: {} }));
+        setErrors(j.errors ?? {});
+        setStatus("error");
+      }
+    } catch {
       setStatus("error");
     }
   }

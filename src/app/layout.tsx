@@ -4,7 +4,8 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Gopher Academy — Vineyard & Estate Gopher Control",
+  metadataBase: new URL("https://gopheracademy.biz"),
+  title: "Gopher Academy - Vineyard & Estate Gopher Control",
   description:
     "Discreet, thorough gopher control for vineyards and estates. We protect the roots your vintage depends on.",
   openGraph: {
