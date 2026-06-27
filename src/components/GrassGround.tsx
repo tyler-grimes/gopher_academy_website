@@ -41,21 +41,30 @@ const blades: Blade[] = Array.from({ length: BLADES }, (_, i) => {
   return { i, d, fill, start, end, delay: (r2 * 1.8).toFixed(2) };
 });
 
-type Root = { j: number; main: string; branch: string; start: number; end: number };
+type Root = { j: number; taproot: string; branch1: string; branch2: string; start: number; end: number };
 
 const roots: Root[] = Array.from({ length: ROOTS }, (_, j) => {
-  const rx = ((j + 0.5) / ROOTS) * W + (rand(j + 11) - 0.5) * 30;
-  const rlen = 80 + rand(j + 33) * 110;
-  const sway = (rand(j + 57) - 0.5) * 64;
-  const main =
-    `M ${f(rx)} ${GROUND} ` +
-    `C ${f(rx + sway * 0.3)} ${f(GROUND + rlen * 0.3)} ${f(rx + sway)} ${f(GROUND + rlen * 0.6)} ${f(rx + sway * 0.7)} ${f(GROUND + rlen)}`;
-  const bx = rx + sway * 0.5;
-  const by = GROUND + rlen * 0.45;
-  const branch = `M ${f(bx)} ${f(by)} C ${f(bx - 16)} ${f(by + 14)} ${f(bx - 26)} ${f(by + 32)} ${f(bx - 30)} ${f(by + 52)}`;
-  const start = 0.4 + rand(j + 71) * 0.25; // roots reach down through the later scroll
-  const end = Math.min(start + 0.45, 1);
-  return { j, main, branch, start, end };
+  const rx = ((j + 0.5) / ROOTS) * W + (rand(j + 11) - 0.5) * 26;
+  const rlen = 90 + rand(j + 33) * 120;
+  const sway = (rand(j + 57) - 0.5) * 72;
+  const tw = 6 + rand(j + 5) * 4; // top half-width, tapers to a point
+  const tipX = rx + sway;
+  const tipY = GROUND + rlen;
+  // Tapered taproot: a filled shape, wide at the surface narrowing to the tip.
+  const taproot =
+    `M ${f(rx - tw)} ${GROUND} ` +
+    `C ${f(rx - tw + sway * 0.3)} ${f(GROUND + rlen * 0.4)} ${f(tipX - 2)} ${f(GROUND + rlen * 0.8)} ${f(tipX)} ${f(tipY)} ` +
+    `C ${f(tipX + 2)} ${f(GROUND + rlen * 0.8)} ${f(rx + tw + sway * 0.3)} ${f(GROUND + rlen * 0.4)} ${f(rx + tw)} ${GROUND} Z`;
+  // two thin tendrils branching off the taproot
+  const b1x = rx + sway * 0.35;
+  const b1y = GROUND + rlen * 0.38;
+  const branch1 = `M ${f(b1x)} ${f(b1y)} C ${f(b1x - 18)} ${f(b1y + 12)} ${f(b1x - 26)} ${f(b1y + 30)} ${f(b1x - 32)} ${f(b1y + 50)}`;
+  const b2x = rx + sway * 0.6;
+  const b2y = GROUND + rlen * 0.62;
+  const branch2 = `M ${f(b2x)} ${f(b2y)} C ${f(b2x + 16)} ${f(b2y + 10)} ${f(b2x + 24)} ${f(b2y + 26)} ${f(b2x + 30)} ${f(b2y + 46)}`;
+  const start = 0.38 + rand(j + 71) * 0.26; // grow through the later scroll
+  const end = Math.min(start + 0.42, 1);
+  return { j, taproot, branch1, branch2, start, end };
 });
 
 function GrassBlade({ b, progress, grown }: { b: Blade; progress: MotionValue<number>; grown: boolean }) {
@@ -75,8 +84,9 @@ function RootStrand({ r, progress, grown }: { r: Root; progress: MotionValue<num
   const scaleY = useTransform(progress, [r.start, r.end], [0, 1], { clamp: true });
   return (
     <motion.g style={{ scaleY: grown ? 1 : scaleY, transformBox: "fill-box", transformOrigin: "top center" }}>
-      <path d={r.main} fill="none" stroke="var(--color-root)" strokeWidth={3} strokeLinecap="round" opacity={0.85} />
-      <path d={r.branch} fill="none" stroke="var(--color-root)" strokeWidth={2} strokeLinecap="round" opacity={0.7} />
+      <path d={r.taproot} fill="var(--color-root)" />
+      <path d={r.branch1} fill="none" stroke="var(--color-root)" strokeWidth={2.5} strokeLinecap="round" />
+      <path d={r.branch2} fill="none" stroke="var(--color-root)" strokeWidth={2.5} strokeLinecap="round" />
     </motion.g>
   );
 }
@@ -106,9 +116,9 @@ function Gopher({ cx, progress, grown }: { cx: number; progress: MotionValue<num
       <circle cx={cx + 25} cy={GROUND - 83} r={4.6} fill="var(--color-gopher-dark)" />
       {/* nose */}
       <ellipse cx={cx} cy={GROUND - 58} rx={9} ry={6.5} fill="var(--color-gopher-dark)" />
-      {/* two buck teeth */}
-      <rect x={cx - 9} y={GROUND - 53} width={8} height={18} rx={2} fill="#FFFFFF" stroke="var(--color-gopher-dark)" strokeWidth={1} />
-      <rect x={cx + 1} y={GROUND - 53} width={8} height={18} rx={2} fill="#FFFFFF" stroke="var(--color-gopher-dark)" strokeWidth={1} />
+      {/* two buck teeth (the 2px gap between them shows the muzzle as a divider) */}
+      <rect x={cx - 9} y={GROUND - 53} width={8} height={18} rx={2} fill="#FFFFFF" />
+      <rect x={cx + 1} y={GROUND - 53} width={8} height={18} rx={2} fill="#FFFFFF" />
     </motion.g>
   );
 }
@@ -128,9 +138,17 @@ export function GrassGround({ progress }: { progress: MotionValue<number> }) {
             <rect x={0} y={-H} width={W} height={GROUND + H} />
           </clipPath>
         </defs>
-        {/* soil */}
+        {/* soil: a gently mounded top that never dips below the ground line, so
+            there is no gap under the grass roots or the gopher */}
         <path
-          d={`M0 ${GROUND} Q ${W * 0.25} ${GROUND - 7} ${W * 0.5} ${GROUND} T ${W} ${GROUND} L ${W} ${H} L 0 ${H} Z`}
+          d={
+            `M0 ${GROUND} ` +
+            `Q ${f(W * 0.12)} ${GROUND - 9} ${f(W * 0.25)} ${GROUND} ` +
+            `Q ${f(W * 0.37)} ${GROUND - 6} ${f(W * 0.5)} ${GROUND} ` +
+            `Q ${f(W * 0.62)} ${GROUND - 10} ${f(W * 0.75)} ${GROUND} ` +
+            `Q ${f(W * 0.87)} ${GROUND - 6} ${W} ${GROUND} ` +
+            `L ${W} ${H} L 0 ${H} Z`
+          }
           fill="var(--color-soil)"
         />
         {/* roots reach down into the soil */}
