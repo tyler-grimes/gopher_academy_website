@@ -29,7 +29,7 @@ const SOIL_TOP =
   `Q ${f(W * 0.62)} ${GROUND - 10} ${f(W * 0.75)} ${GROUND} ` +
   `Q ${f(W * 0.87)} ${GROUND - 6} ${W} ${GROUND}`;
 
-type Blade = { i: number; d: string; fill: string; start: number; end: number; delay: string };
+type Blade = { i: number; d: string; fill: string; tipY: number; h: number; start: number; end: number; delay: string };
 
 const blades: Blade[] = Array.from({ length: BLADES }, (_, i) => {
   const r1 = rand(i);
@@ -48,8 +48,20 @@ const blades: Blade[] = Array.from({ length: BLADES }, (_, i) => {
     `M ${f(x - w)} ${GROUND} ` +
     `C ${f(x - w + lean * 0.5)} ${f(GROUND - h * 0.4)} ${f(x + lean - w * 0.5)} ${f(GROUND - h * 0.82)} ${f(x + lean)} ${f(tipY)} ` +
     `C ${f(x + lean + w * 0.3)} ${f(GROUND - h * 0.7)} ${f(x + w + lean * 0.5)} ${f(GROUND - h * 0.35)} ${f(x + w)} ${GROUND} Z`;
-  return { i, d, fill, start, end, delay: (r2 * 1.8).toFixed(2) };
+  return { i, d, fill, tipY, h, start, end, delay: (r2 * 1.8).toFixed(2) };
 });
+
+// Static soil texture: small spec stones scattered below the front lip so the
+// dirt reads as dirt, not a flat fill. Deterministic + f()ed so SSR and client
+// render identical strings.
+const STONE_FILLS = ["var(--color-rock)", "var(--color-rock-light)", "var(--color-soil-dark)"];
+type Speck = { x: string; y: string; r: string; fill: string };
+const SPECKS: Speck[] = Array.from({ length: 46 }, (_, i) => ({
+  x: f(rand(i + 300) * W),
+  y: f(LIP + 8 + rand(i + 360) * (H - LIP - 16)),
+  r: f(1 + rand(i + 410) * 2),
+  fill: STONE_FILLS[Math.floor(rand(i + 450) * STONE_FILLS.length)],
+}));
 
 type Root = { j: number; main: string; branch1: string; branch2: string; start: number; end: number };
 
@@ -74,14 +86,23 @@ const roots: Root[] = Array.from({ length: ROOTS }, (_, j) => {
 });
 
 function GrassBlade({ b, progress, grown }: { b: Blade; progress: MotionValue<number>; grown: boolean }) {
-  const scaleY = useTransform(progress, [b.start, b.end], [0, 1], { clamp: true });
+  // Grow by revealing the (undistorted) blade through a rectangular clip window
+  // that scales up from the soil line — the mirror of how roots draw downward.
+  // The blade path never scales, so its curve keeps its shape the whole way up.
+  const reveal = useTransform(progress, [b.start, b.end], [0, 1], { clamp: true });
+  const clipId = `blade-${b.i}`;
   return (
     <g className="grass-blade" style={{ "--sway-delay": `${b.delay}s` } as React.CSSProperties}>
-      <motion.path
-        d={b.d}
-        fill={b.fill}
-        style={{ scaleY: grown ? 1 : scaleY, transformBox: "fill-box", transformOrigin: "bottom center" }}
-      />
+      <clipPath id={clipId}>
+        <motion.rect
+          x={0}
+          y={f(b.tipY)}
+          width={W}
+          height={f(b.h)}
+          style={{ scaleY: grown ? 1 : reveal, transformBox: "fill-box", transformOrigin: "bottom center" }}
+        />
+      </clipPath>
+      <path d={b.d} fill={b.fill} clipPath={`url(#${clipId})`} />
     </g>
   );
 }
@@ -151,6 +172,10 @@ export function GrassGround({ progress }: { progress: MotionValue<number> }) {
         </defs>
         {/* soil: mounded top that never dips below the ground line */}
         <path d={`${SOIL_TOP} L ${W} ${H} L 0 ${H} Z`} fill="var(--color-soil)" />
+        {/* soil texture: small spec stones */}
+        {SPECKS.map((s, i) => (
+          <circle key={`s${i}`} cx={s.x} cy={s.y} r={s.r} fill={s.fill} />
+        ))}
         {/* roots draw downward into the soil */}
         {roots.map((r) => (
           <RootStrand key={r.j} r={r} progress={progress} grown={grown} />
