@@ -4,6 +4,9 @@ import { Section } from "./Section";
 
 const acreages = ["Under 5 acres", "5-20 acres", "20-50 acres", "50+ acres"];
 
+const field = "mt-2 w-full rounded-xl border border-hairline bg-surface px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/30";
+const label = "text-sm font-medium text-ink";
+
 export function Consult() {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -13,21 +16,23 @@ export function Consult() {
     setStatus("submitting");
     setErrors({});
     const data = Object.fromEntries(new FormData(e.currentTarget).entries());
-    const res = await fetch("/api/consult", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) setStatus("success");
-    else {
-      const j = await res.json().catch(() => ({ errors: {} }));
-      setErrors(j.errors ?? {});
+    try {
+      const res = await fetch("/api/consult", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        setStatus("success");
+      } else {
+        const j = await res.json().catch(() => ({ errors: {} }));
+        setErrors(j.errors ?? {});
+        setStatus("error");
+      }
+    } catch {
       setStatus("error");
     }
   }
-
-  const field = "mt-2 w-full rounded-xl border border-hairline bg-surface px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/30";
-  const label = "text-sm font-medium text-ink";
 
   if (status === "success") {
     return (
