@@ -17,20 +17,6 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  /* Minimal not-blinding fallback; light is the design target. */
-  :root {
-    --color-bg: #16181A;
-    --color-surface: #1E2123;
-    --color-ink: #E7E9E6;
-    --color-muted: #A2ABA5;
-    --color-hairline: #2C312E;
-    --color-accent: #6E9C86;
-    --color-accent-hover: #84B19B;
-    --color-on-accent: #14181A;
-  }
-}
-
 body {
   background: var(--color-bg);
   color: var(--color-ink);
