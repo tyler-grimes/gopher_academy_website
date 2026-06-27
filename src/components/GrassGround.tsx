@@ -94,9 +94,16 @@ function GrassBlade({ b, progress, grown }: { b: Blade; progress: MotionValue<nu
   // Round the start offset to a whole pixel so the SSR transform string matches
   // the client's (Math.sin floats differ in their last digits -> hydration).
   const ty = useTransform(progress, [b.start, b.end], [Math.round(b.h), 0], { clamp: true });
+  // Widen from a thin sliver to full width as it rises, anchored at the base
+  // center, so the blade starts slim and fills out as it grows.
+  const sx = useTransform(progress, [b.start, b.end], [0.3, 1], { clamp: true });
   return (
     <g className="grass-blade" style={{ "--sway-delay": `${b.delay}s` } as React.CSSProperties}>
-      <motion.path d={b.d} fill={b.fill} style={{ y: grown ? 0 : ty }} />
+      <motion.path
+        d={b.d}
+        fill={b.fill}
+        style={{ y: grown ? 0 : ty, scaleX: grown ? 1 : sx, transformBox: "fill-box", transformOrigin: "bottom center" }}
+      />
     </g>
   );
 }
